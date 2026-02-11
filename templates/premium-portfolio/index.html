@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium Portfolio</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+
+  <!-- Background Glow -->
+  <div class="glow-bg"></div>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+
+    <div class="hero-content">
+
+      <!-- Logo -->
+      <img id="logo" class="logo" src="" alt="Company Logo" />
+
+      <!-- Company Name -->
+      <h1 id="business-name">Business Name</h1>
+
+      <!-- Button -->
+      <a href="#about" class="btn">Explore</a>
+
+    </div>
+
+  </section>
+
+  <!-- ABOUT SECTION -->
+  <section class="about" id="about">
+    <h2>✨ About Us</h2>
+
+    <!-- Description Comes Here -->
+    <p id="description">
+      Business description will appear here dynamically.
+    </p>
+  </section>
+
+  <!-- CONTACT + SOCIAL SECTION -->
+  <section class="info-cards" id="contact">
+
+    <!-- Contact Card -->
+    <div class="card">
+      <h2>📞 Contact Details</h2>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Phone:</strong> <span id="phone"></span></p>
+      <p><strong>Address:</strong> <span id="address"></span></p>
+    </div>
+
+    <!-- Social Card -->
+    <div class="card">
+      <h2>🌍 Social Links</h2>
+
+      <div class="social-links">
+        <a id="linkedin" target="_blank">LinkedIn</a>
+        <a id="twitter" target="_blank">Twitter</a>
+        <a id="instagram" target="_blank">Instagram</a>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>✨ Powered by <span>BrandForge AI</span></p>
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    async function loadPortfolio() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+
+      if (!id) {
+        alert("No portfolio ID found!");
+        return;
+      }
+
+      const res = await fetch(`http://localhost:5000/api/portfolio/${id}`);
+      const data = await res.json();
+
+      // Fill Data
+      document.getElementById("business-name").innerText = data.businessName;
+
+      // Description now in About section only
+      document.getElementById("description").innerText = data.description;
+
+      document.getElementById("email").innerText = data.email;
+      document.getElementById("phone").innerText = data.phone;
+      document.getElementById("address").innerText = data.address;
+
+      document.getElementById("linkedin").href = data.linkedin;
+      document.getElementById("twitter").href = data.twitter;
+      document.getElementById("instagram").href = data.instagram;
+
+      // Logo
+      if (data.logoUrl) {
+        document.getElementById("logo").src = data.logoUrl;
+      } else {
+        document.getElementById("logo").style.display = "none";
+      }
+    }
+
+    loadPortfolio();
+  </script>
+
+</body>
+</html>
