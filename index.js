@@ -7,16 +7,16 @@ const portfolioRoutes = require("./routes/portfolioRoutes.js");
 
 const app = express();
 
-app.use(
-  cors({
-    origin: "*",
-  })
-);
-
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// ✅ VERY IMPORTANT
-// app.use("/templates", express.static("templates"));
+/* ✅ CONNECT MONGODB */
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => console.log("❌ MongoDB Connection Error:", err));
+
+/* ROUTES */
 app.use("/api/portfolio", portfolioRoutes);
 
 const PORT = process.env.PORT || 5000;
