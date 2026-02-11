@@ -91,7 +91,7 @@ router.post("/", upload.single("logo"), async (req, res) => {
       portfolio: savedPortfolio,
 
       // ✅ Portfolio link
-      portfolioUrl: `https://brandforge-portfolio.vercel.app/portfolio/${savedPortfolio._id}`,
+      portfolioUrl: `https://portfolio-viewer-seven.vercel.app/portfolio/${savedPortfolio._id}`,
       //portfolioUrl: `http://localhost:5000/templates/premium-portfolio/index.html?id=${savedPortfolio._id}`,
     });
   } catch (error) {
