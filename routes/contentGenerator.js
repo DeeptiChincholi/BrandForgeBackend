@@ -22,8 +22,8 @@ Format example:
 #hashtag2
 #hashtag3`;
 
-    // ✅ FIXED MODEL NAME
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    // ✅ CORRECT MODEL NAME
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -54,7 +54,7 @@ Format example:
       .split("\n")
       .filter(line => line.trim().startsWith("#"))
       .map(line => line.trim())
-      .slice(0, 15); // Limit to 15 hashtags
+      .slice(0, 15);
 
     res.json({ hashtags });
   } catch (err) {
@@ -90,8 +90,8 @@ Caption two here ✨
 ---
 Caption three here 💡`;
 
-    // ✅ FIXED MODEL NAME
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    // ✅ CORRECT MODEL NAME
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -122,7 +122,7 @@ Caption three here 💡`;
       .split("---")
       .map(caption => caption.trim())
       .filter(caption => caption.length > 0)
-      .slice(0, 5); // Limit to 5 captions
+      .slice(0, 5);
 
     res.json({ captions });
   } catch (err) {
@@ -158,7 +158,7 @@ Style requirements:
 - No text (visual elements only)
 - 16:9 aspect ratio preferred`;
 
-    // ✅ CORRECT MODEL NAME (same as logo generator)
+    // ✅ CORRECT MODEL NAME (same as your logo generator)
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
     const response = await fetch(apiUrl, {
