@@ -1,47 +1,39 @@
 const express = require("express");
 const router = express.Router();
-const fetch = require("node-fetch");
+const Replicate = require("replicate");
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
 
 router.post("/generate", async (req, res) => {
   try {
     const { companyName, description, brandGoals } = req.body;
 
     const prompt = `
-      Professional logo for brand "${companyName}".
+      A professional logo for a company called "${companyName}".
       Business: ${description}.
       Style: ${brandGoals || "minimal modern"}.
-      Clean vector style, centered, no background.
+      Vector style, clean, centered, no background.
     `;
 
-    const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/runwayml/stable-diffusion-v1-5",
+    // Stable Diffusion model on Replicate
+    const output = await replicate.run(
+      "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
       {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.HF_API_KEY}`,
-          "Content-Type": "application/json",
+        input: {
+          prompt: prompt,
+          width: 512,
+          height: 512,
         },
-        body: JSON.stringify({ inputs: prompt }),
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("HF Error:", errorText);
-
-      return res.status(400).json({
-        message: "Logo generation failed",
-        error: errorText,
-      });
-    }
-
-    const imageBuffer = await response.arrayBuffer();
-
-    res.set("Content-Type", "image/png");
-    res.send(Buffer.from(imageBuffer));
+    // Replicate returns an image URL
+    res.json({ imageUrl: output[0] });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server Error" });
+    console.log("Replicate Error:", err);
+    res.status(500).json({ message: "Logo generation failed" });
   }
 });
 

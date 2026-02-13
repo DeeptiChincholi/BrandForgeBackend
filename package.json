@@ -18,7 +18,8 @@
     "fs-extra": "^11.3.3",
     "mongoose": "^9.1.6",
     "multer": "^2.0.2",
-    "multer-storage-cloudinary": "^4.0.0"
+    "multer-storage-cloudinary": "^4.0.0",
+    "replicate": "^1.4.0"
   },
   "devDependencies": {
     "vercel": "^50.15.1"
