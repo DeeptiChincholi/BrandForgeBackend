@@ -10,12 +10,11 @@ app.use(express.json());
 
 
 const portfolioRoutes = require("./routes/portfolioRoutes.js");
-const logoSvgRoutes = require("./routes/logoSvg.js");
-
+const logoGeminiRoutes = require("./routes/logoGemini.js");
 
 /* ROUTES */
 app.use("/api/portfolio", portfolioRoutes);
-app.use("/api/logo-svg", logoSvgRoutes);
+app.use("/api/logo-gemini", logoGeminiRoutes);
 /* ✅ CONNECT MONGODB */
 mongoose
   .connect(process.env.MONGO_URI)
