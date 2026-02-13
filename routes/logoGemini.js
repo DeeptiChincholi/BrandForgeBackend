@@ -44,7 +44,13 @@ router.post("/generate", async (req, res) => {
         }),
       });
 
+     
       const data = await response.json();
+console.log("Gemini API response:", data);
+
+if (!data.data || !data.data[0]?.url) {
+    return res.status(500).json({ message: "Gemini did not return a valid image URL", raw: data });
+}
 
       // Depending on API response, it might return URL or base64
       logos.push({ styleName, url: data.data[0].url });
