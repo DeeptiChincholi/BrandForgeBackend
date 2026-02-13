@@ -2,22 +2,19 @@ const express = require("express");
 const router = express.Router();
 const fetch = require("node-fetch");
 
-console.log("HF Key Loaded?", process.env.HF_API_KEY ? "YES" : "NO");
-
-
 router.post("/generate", async (req, res) => {
   try {
     const { companyName, description, brandGoals } = req.body;
 
     const prompt = `
-    Professional logo for brand "${companyName}".
-    Business: ${description}.
-    Style: ${brandGoals || "minimal modern"}.
-    Clean vector style, centered, no background.
+      Professional logo for brand "${companyName}".
+      Business: ${description}.
+      Style: ${brandGoals || "minimal modern"}.
+      Clean vector style, centered, no background.
     `;
 
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+      "https://router.huggingface.co/hf-inference/models/runwayml/stable-diffusion-v1-5",
       {
         method: "POST",
         headers: {
@@ -29,15 +26,14 @@ router.post("/generate", async (req, res) => {
     );
 
     if (!response.ok) {
-  const errorText = await response.text();
-  console.log("HF Error:", errorText);
+      const errorText = await response.text();
+      console.log("HF Error:", errorText);
 
-  return res.status(400).json({
-    message: "Logo generation failed",
-    error: errorText,
-  });
-}
-
+      return res.status(400).json({
+        message: "Logo generation failed",
+        error: errorText,
+      });
+    }
 
     const imageBuffer = await response.arrayBuffer();
 
