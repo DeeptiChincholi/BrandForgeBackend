@@ -22,7 +22,8 @@ Format example:
 #hashtag2
 #hashtag3`;
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    // ✅ FIXED MODEL NAME
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -89,7 +90,8 @@ Caption two here ✨
 ---
 Caption three here 💡`;
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    // ✅ FIXED MODEL NAME
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -156,6 +158,7 @@ Style requirements:
 - No text (visual elements only)
 - 16:9 aspect ratio preferred`;
 
+    // ✅ CORRECT MODEL NAME (same as logo generator)
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
     const response = await fetch(apiUrl, {
