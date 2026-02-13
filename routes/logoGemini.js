@@ -32,17 +32,23 @@ router.post("/generate", async (req, res) => {
       `;
 
       const response = await fetch("https://api.generativeai.googleapis.com/v1/images:generate", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.GOOGLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gemini-2.5-flash-image",
-          prompt: prompt,
-          size: "1024x1024"
-        }),
-      });
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${process.env.GOOGLE_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "gemini-2.5-flash-image",
+    prompt: prompt,
+    size: "1024x1024"
+  }),
+});
+
+if (!response.ok) {
+  const text = await response.text();
+  console.error("Gemini fetch failed:", text);
+  return res.status(500).json({ message: "Gemini API request failed", raw: text });
+}
 
      
       const data = await response.json();
