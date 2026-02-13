@@ -30,8 +30,13 @@ router.post("/generate", async (req, res) => {
         Style: ${styleName}.
         Clean, centered, vector style, no background.
       `;
+      const apiUrl = "https://api.generativeai.googleapis.com/v1/images:generate".trim();
 
-      const response = await fetch("https://api.generativeai.googleapis.com/v1/images:generate", {
+
+      console.log("Using URL:", apiUrl);
+console.log("Using key:", process.env.GOOGLE_API_KEY?.slice(0,5)+"...");
+
+      const response = await fetch(apiUrl, {
   method: "POST",
   headers: {
     "Authorization": `Bearer ${process.env.GOOGLE_API_KEY}`,
