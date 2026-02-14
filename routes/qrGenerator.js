@@ -58,28 +58,19 @@ router.post("/generate", async (req, res) => {
 });
 
 // ========================================
-// GENERATE CUSTOM QR CODE (WORKING VERSION)
+// GENERATE CUSTOM QR CODE
 // ========================================
 router.post("/generate-custom", upload.single("logo"), async (req, res) => {
   try {
-    const { 
-      url, 
-      primaryColor, 
-      patternStyle,
-      qrOuterShape, 
-      companyInitial,
-      useAIBackground 
-    } = req.body;
+    const { url, primaryColor, companyInitial, patternStyle } = req.body;
     const logoFile = req.file;
 
     console.log("Received request:", {
       url,
       primaryColor,
-      patternStyle,
-      qrOuterShape,
       companyInitial,
-      useAIBackground,
-      hasLogo: !!logoFile
+      patternStyle,
+      hasLogo: !!logoFile,
     });
 
     if (!url) {
@@ -93,26 +84,90 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     }
 
     const customColor = primaryColor || "#000000";
+    const pattern = patternStyle || "square";
     const size = 600;
 
-    // Step 1: Generate base QR code with custom color
-    const qrBuffer = await QRCode.toBuffer(url, {
-      errorCorrectionLevel: "H",
-      margin: 2,
-      width: size,
-      color: {
-        dark: customColor,
-        light: "#FFFFFF",
-      },
-    });
+    // Step 1: Generate base QR code
+    let qrBuffer;
 
-    // Step 2: Load QR into canvas
+    if (pattern === "square") {
+      // Standard square QR
+      qrBuffer = await QRCode.toBuffer(url, {
+        errorCorrectionLevel: "H",
+        margin: 2,
+        width: size,
+        color: {
+          dark: customColor,
+          light: "#FFFFFF",
+        },
+      });
+    } else {
+      // For patterns, generate black/white first, then redraw
+      qrBuffer = await QRCode.toBuffer(url, {
+        errorCorrectionLevel: "H",
+        margin: 2,
+        width: size,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      });
+    }
+
+    // Step 2: Create canvas and load QR
     const canvas = createCanvas(size, size);
     const ctx = canvas.getContext("2d");
-    const qrImage = await loadImage(qrBuffer);
-    ctx.drawImage(qrImage, 0, 0, size, size);
 
-    // Step 3: Add logo if provided
+    // Draw white background
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, size, size);
+
+    const qrImage = await loadImage(qrBuffer);
+
+    // Step 3: Apply pattern if not square
+    if (pattern !== "square") {
+      // Create temp canvas to read QR pixels
+      const tempCanvas = createCanvas(size, size);
+      const tempCtx = tempCanvas.getContext("2d");
+      tempCtx.drawImage(qrImage, 0, 0, size, size);
+      const imageData = tempCtx.getImageData(0, 0, size, size);
+
+      const moduleSize = 8; // Size of each QR module
+
+      // Draw patterns
+      for (let y = 0; y < size; y += moduleSize) {
+        for (let x = 0; x < size; x += moduleSize) {
+          const i = (y * size + x) * 4;
+          const isDark = imageData.data[i] < 128;
+
+          if (isDark) {
+            const centerX = x + moduleSize / 2;
+            const centerY = y + moduleSize / 2;
+            ctx.fillStyle = customColor;
+
+            if (pattern === "dots") {
+              // Circular dots
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, moduleSize / 2.5, 0, Math.PI * 2);
+              ctx.fill();
+            } else if (pattern === "rounded") {
+              // Rounded squares
+              roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3.5);
+            } else if (pattern === "circle") {
+              // Larger circles
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, moduleSize / 2.2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      }
+    } else {
+      // Just draw the standard QR
+      ctx.drawImage(qrImage, 0, 0, size, size);
+    }
+
+    // Step 4: Add logo if provided
     if (logoFile) {
       try {
         const logoImage = await loadImage(logoFile.buffer);
@@ -134,7 +189,7 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
         ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
         ctx.restore();
 
-        // Border around logo
+        // Border
         ctx.strokeStyle = customColor;
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -144,21 +199,43 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
         console.error("Logo processing error:", err);
       }
     } else if (companyInitial) {
-      // Add initial letter
+      // Step 5: Add 3D embossed initial (like your reference image)
       const initial = companyInitial.charAt(0).toUpperCase();
-      
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 100px Arial";
+      const centerX = size / 2;
+      const centerY = size / 2;
+
+      // Create 3D effect with multiple layers
+      ctx.save();
+
+      // Layer 1: Deep shadow (bottom right)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.font = "bold 140px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      
-      // Stroke for visibility
+      ctx.fillText(initial, centerX + 6, centerY + 6);
+
+      // Layer 2: Medium shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillText(initial, centerX + 4, centerY + 4);
+
+      // Layer 3: Light shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+      ctx.fillText(initial, centerX + 2, centerY + 2);
+
+      // Layer 4: Main letter (white/light)
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(initial, centerX, centerY);
+
+      // Layer 5: Top highlight (gives 3D raised effect)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.fillText(initial, centerX - 1, centerY - 1);
+
+      // Layer 6: Outline for definition
       ctx.strokeStyle = customColor;
-      ctx.lineWidth = 8;
-      ctx.strokeText(initial, size / 2, size / 2);
-      
-      // Fill
-      ctx.fillText(initial, size / 2, size / 2);
+      ctx.lineWidth = 3;
+      ctx.strokeText(initial, centerX, centerY);
+
+      ctx.restore();
     }
 
     // Convert to base64
@@ -173,9 +250,25 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     res.status(500).json({
       message: "Custom QR generation failed",
       error: err.message,
-      stack: err.stack
+      stack: err.stack,
     });
   }
 });
+
+// Helper function for rounded rectangles
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  ctx.fill();
+}
 
 module.exports = router;
