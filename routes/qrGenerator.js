@@ -209,7 +209,7 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
 
       // Layer 1: Deep shadow (bottom right)
       ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-      ctx.font = "bold 140px Arial";
+      ctx.font = "bold 200px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(initial, centerX + 6, centerY + 6);
@@ -231,9 +231,9 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
       ctx.fillText(initial, centerX - 1, centerY - 1);
 
       // Layer 6: Outline for definition
-      ctx.strokeStyle = customColor;
-      ctx.lineWidth = 3;
-      ctx.strokeText(initial, centerX, centerY);
+      // ctx.strokeStyle = customColor;
+      // ctx.lineWidth = 3;
+      // ctx.strokeText(initial, centerX, centerY);
 
       ctx.restore();
     }
