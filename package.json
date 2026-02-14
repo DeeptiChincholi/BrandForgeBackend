@@ -19,6 +19,7 @@
     "mongoose": "^9.1.6",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "qrcode": "^1.5.4",
     "replicate": "^1.4.0"
   },
   "devDependencies": {
