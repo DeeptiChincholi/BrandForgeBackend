@@ -208,27 +208,27 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
       ctx.save();
 
       // Layer 1: Deep shadow (bottom right)
-      // ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-      // ctx.font = "bold 200px Arial";
-      // ctx.textAlign = "center";
-      // ctx.textBaseline = "middle";
-      // ctx.fillText(initial, centerX + 6, centerY + 6);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.font = "bold 200px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(initial, centerX + 6, centerY + 6);
 
-      // // Layer 2: Medium shadow
-      // ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-      // ctx.fillText(initial, centerX + 4, centerY + 4);
+      // Layer 2: Medium shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillText(initial, centerX + 4, centerY + 4);
 
-      // // Layer 3: Light shadow
-      // ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-      // ctx.fillText(initial, centerX + 2, centerY + 2);
+      // Layer 3: Light shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+      ctx.fillText(initial, centerX + 2, centerY + 2);
 
       // Layer 4: Main letter (white/light)
       ctx.fillStyle = "#FFFFFF";
       ctx.fillText(initial, centerX, centerY);
 
       // Layer 5: Top highlight (gives 3D raised effect)
-      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-      ctx.fillText(initial, centerX - 1, centerY - 1);
+      // ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+      // ctx.fillText(initial, centerX - 1, centerY - 1);
 
       // Layer 6: Outline for definition
       // ctx.strokeStyle = customColor;
