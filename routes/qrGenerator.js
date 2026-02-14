@@ -125,47 +125,74 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     const qrImage = await loadImage(qrBuffer);
 
     // Step 3: Apply pattern if not square
-    if (pattern !== "square") {
-      // Create temp canvas to read QR pixels
-      const tempCanvas = createCanvas(size, size);
-      const tempCtx = tempCanvas.getContext("2d");
-      tempCtx.drawImage(qrImage, 0, 0, size, size);
-      const imageData = tempCtx.getImageData(0, 0, size, size);
+    // Step 3: Apply pattern if not square
+if (pattern !== "square") {
 
-      const moduleSize = 8; // Size of each QR module
+  // ✅ Create QR matrix properly
+  const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
 
-      // Draw patterns
-      for (let y = 0; y < size; y += moduleSize) {
-        for (let x = 0; x < size; x += moduleSize) {
-          const i = (y * size + x) * 4;
-          const isDark = imageData.data[i] < 128;
+  const moduleCount = qr.modules.size;
+  const moduleSize = size / moduleCount;
 
-          if (isDark) {
-            const centerX = x + moduleSize / 2;
-            const centerY = y + moduleSize / 2;
-            ctx.fillStyle = customColor;
+  // Draw modules safely
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
 
-            if (pattern === "dots") {
-              // Circular dots
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, moduleSize / 2.5, 0, Math.PI * 2);
-              ctx.fill();
-            } else if (pattern === "rounded") {
-              // Rounded squares
-              roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3.5);
-            } else if (pattern === "circle") {
-              // Larger circles
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, moduleSize / 2.2, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-        }
+      const isDark = qr.modules.get(row, col);
+      if (!isDark) continue;
+
+      const x = col * moduleSize;
+      const y = row * moduleSize;
+
+      // ✅ Keep finder patterns square (VERY IMPORTANT)
+      const isFinder =
+        (col < 9 && row < 9) ||
+        (col > moduleCount - 9 && row < 9) ||
+        (col < 9 && row > moduleCount - 9);
+
+      ctx.fillStyle = customColor;
+
+      if (isFinder) {
+        ctx.fillRect(x, y, moduleSize, moduleSize);
+        continue;
       }
-    } else {
-      // Just draw the standard QR
-      ctx.drawImage(qrImage, 0, 0, size, size);
+
+      // ✅ Draw patterns
+      if (pattern === "dots") {
+        ctx.beginPath();
+        ctx.arc(
+          x + moduleSize / 2,
+          y + moduleSize / 2,
+          moduleSize / 2,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      else if (pattern === "rounded") {
+        roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3);
+      }
+
+      else if (pattern === "circle") {
+        ctx.beginPath();
+        ctx.arc(
+          x + moduleSize / 2,
+          y + moduleSize / 2,
+          moduleSize / 2.1,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
     }
+  }
+
+} else {
+  // Square QR stays same
+  ctx.drawImage(qrImage, 0, 0, size, size);
+}
+
 
     // Step 4: Add logo if provided
     if (logoFile) {
