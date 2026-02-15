@@ -151,10 +151,9 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
           const x = col * moduleSize;
           const y = row * moduleSize;
 
-          const isFinder =
-            (col < 9 && row < 9) ||
-            (col > moduleCount - 9 && row < 9) ||
-            (col < 9 && row > moduleCount - 9);
+          const isFinder = (col < 7 && row < 7) ||
+                  (col >= moduleCount - 7 && row < 7) ||
+                  (col < 7 && row >= moduleCount - 7);
 
           if (isFinder) {
             continue; // Skip finders, draw them separately
@@ -191,9 +190,10 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
             if (!isDark) continue;
 
             const isFinder =
-              (col < 9 && row < 9) ||
-              (col > moduleCount - 9 && row < 9) ||
-              (col < 9 && row > moduleCount - 9);
+                (col < 7 && row < 7) ||
+                (col >= moduleCount - 7 && row < 7) ||
+                (col < 7 && row >= moduleCount - 7);
+
 
             if (isFinder) {
               const x = col * moduleSize;
@@ -220,9 +220,10 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
           const y = row * moduleSize;
 
           const isFinder =
-            (col < 9 && row < 9) ||
-            (col > moduleCount - 9 && row < 9) ||
-            (col < 9 && row > moduleCount - 9);
+                (col < 7 && row < 7) ||
+                (col >= moduleCount - 7 && row < 7) ||
+                (col < 7 && row >= moduleCount - 7);
+
 
           if (useRoundedEyes && isFinder) {
             continue; // Skip, will draw rounded version
@@ -327,48 +328,36 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
 
 // Draw Instagram-style rounded finder pattern
 function drawRoundedFinderPattern(ctx, x, y, moduleSize, color) {
-  const size = moduleSize * 7; // Finder is 7x7 modules
-  const outerRadius = size / 4;
+  const outerSize = moduleSize * 7;
   const innerSize = moduleSize * 3;
-  const innerRadius = innerSize / 4;
-  const centerPos = size / 2;
 
-  ctx.save();
-  
-  // Outer rounded square (thick ring)
+  // 1️⃣ Outer Dark Rounded Square
   ctx.fillStyle = color;
-  ctx.beginPath();
-  roundRectPath(ctx, x, y, size, size, outerRadius);
-  ctx.fill();
-  
-  // Cut out inner rounded square (creates ring effect)
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  roundRectPath(
-    ctx, 
-    x + moduleSize * 2, 
-    y + moduleSize * 2, 
-    innerSize, 
-    innerSize, 
-    innerRadius
+  roundRect(ctx, x, y, outerSize, outerSize, moduleSize * 2);
+
+  // 2️⃣ Middle White Square (Important Gap)
+  ctx.fillStyle = "#FFFFFF";
+  roundRect(
+    ctx,
+    x + moduleSize,
+    y + moduleSize,
+    moduleSize * 5,
+    moduleSize * 5,
+    moduleSize * 1.5
   );
-  ctx.fill();
-  
-  // Add center dot
-  ctx.globalCompositeOperation = 'source-over';
+
+  // 3️⃣ Inner Dark Dot
   ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(
-    x + centerPos,
-    y + centerPos,
-    moduleSize * 1.5,
-    0,
-    Math.PI * 2
+  roundRect(
+    ctx,
+    x + moduleSize * 2,
+    y + moduleSize * 2,
+    innerSize,
+    innerSize,
+    moduleSize
   );
-  ctx.fill();
-  
-  ctx.restore();
 }
+
 
 // Helper for rounded rectangle path (no fill)
 function roundRectPath(ctx, x, y, width, height, radius) {
