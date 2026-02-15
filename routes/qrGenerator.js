@@ -62,7 +62,7 @@ router.post("/generate", async (req, res) => {
 // ========================================
 router.post("/generate-custom", upload.single("logo"), async (req, res) => {
   try {
-    const { url, primaryColor, companyInitial, patternStyle } = req.body;
+    const { url, primaryColor, eyeColor, backgroundColor, companyInitial, patternStyle } = req.body;
     const logoFile = req.file;
 
     console.log("Received request:", {
@@ -84,6 +84,8 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     }
 
     const customColor = primaryColor || "#000000";
+    const finderColor = eyeColor || customColor; 
+    const bgColor = backgroundColor || "#FFFFFF";
     const pattern = patternStyle || "square";
     const size = 600;
 
@@ -119,7 +121,7 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     const ctx = canvas.getContext("2d");
 
     // Draw white background
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, size, size);
 
     const qrImage = await loadImage(qrBuffer);
@@ -150,27 +152,30 @@ if (pattern !== "square") {
         (col > moduleCount - 9 && row < 9) ||
         (col < 9 && row > moduleCount - 9);
 
-      ctx.fillStyle = customColor;
 
       if (isFinder) {
+        ctx.fillStyle = finderColor; // Use eye color for finders
         ctx.fillRect(x, y, moduleSize, moduleSize);
         continue;
       }
 
-      // ✅ Draw patterns
-      if (pattern === "dots") {
-        ctx.beginPath();
-        ctx.arc(
-          x + moduleSize / 2,
-          y + moduleSize / 2,
-          moduleSize / 2,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
-      }
+      ctx.fillStyle = customColor; // Use QR color for modules
 
-      else if (pattern === "rounded") {
+      // ✅ Draw patterns
+      // if (pattern === "dots") {
+      //   ctx.beginPath();
+      //   ctx.arc(
+      //     x + moduleSize / 2,
+      //     y + moduleSize / 2,
+      //     moduleSize / 2,
+      //     0,
+      //     Math.PI * 2
+      //   );
+      //   ctx.fill();
+      // }
+
+      // else 
+      if (pattern === "rounded") {
         roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3);
       }
 
@@ -191,6 +196,30 @@ if (pattern !== "square") {
 } else {
   // Square QR stays same
   ctx.drawImage(qrImage, 0, 0, size, size);
+  if (finderColor !== customColor) {
+    const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
+    const moduleCount = qr.modules.size;
+    const moduleSize = size / moduleCount;
+
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        const isDark = qr.modules.get(row, col);
+        if (!isDark) continue;
+
+        const isFinder =
+          (col < 9 && row < 9) ||
+          (col > moduleCount - 9 && row < 9) ||
+          (col < 9 && row > moduleCount - 9);
+
+        if (isFinder) {
+          const x = col * moduleSize;
+          const y = row * moduleSize;
+          ctx.fillStyle = finderColor;
+          ctx.fillRect(x, y, moduleSize, moduleSize);
+        }
+      }
+    }
+  }
 }
 
 
