@@ -62,12 +62,21 @@ router.post("/generate", async (req, res) => {
 // ========================================
 router.post("/generate-custom", upload.single("logo"), async (req, res) => {
   try {
-    const { url, primaryColor, companyInitial, patternStyle } = req.body;
+    const { 
+      url, 
+      primaryColor, 
+      eyeColor,
+      backgroundColor,
+      companyInitial, 
+      patternStyle 
+    } = req.body;
     const logoFile = req.file;
 
     console.log("Received request:", {
       url,
       primaryColor,
+      eyeColor,
+      backgroundColor,
       companyInitial,
       patternStyle,
       hasLogo: !!logoFile,
@@ -84,6 +93,8 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     }
 
     const customColor = primaryColor || "#000000";
+    const finderColor = eyeColor || customColor; // Eye color defaults to QR color
+    const bgColor = backgroundColor || "#FFFFFF";
     const pattern = patternStyle || "square";
     const size = 600;
 
@@ -98,7 +109,7 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
         width: size,
         color: {
           dark: customColor,
-          light: "#FFFFFF",
+          light: bgColor,
         },
       });
     } else {
@@ -118,81 +129,93 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     const canvas = createCanvas(size, size);
     const ctx = canvas.getContext("2d");
 
-    // Draw white background
-    ctx.fillStyle = "#FFFFFF";
+    // Draw background color
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, size, size);
 
     const qrImage = await loadImage(qrBuffer);
 
     // Step 3: Apply pattern if not square
-    // Step 3: Apply pattern if not square
-if (pattern !== "square") {
+    if (pattern !== "square") {
+      // ✅ Create QR matrix properly
+      const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
 
-  // ✅ Create QR matrix properly
-  const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
+      const moduleCount = qr.modules.size;
+      const moduleSize = size / moduleCount;
 
-  const moduleCount = qr.modules.size;
-  const moduleSize = size / moduleCount;
+      // Draw modules safely
+      for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+          const isDark = qr.modules.get(row, col);
+          if (!isDark) continue;
 
-  // Draw modules safely
-  for (let row = 0; row < moduleCount; row++) {
-    for (let col = 0; col < moduleCount; col++) {
+          const x = col * moduleSize;
+          const y = row * moduleSize;
 
-      const isDark = qr.modules.get(row, col);
-      if (!isDark) continue;
+          // ✅ Keep finder patterns square (VERY IMPORTANT)
+          const isFinder =
+            (col < 9 && row < 9) ||
+            (col > moduleCount - 9 && row < 9) ||
+            (col < 9 && row > moduleCount - 9);
 
-      const x = col * moduleSize;
-      const y = row * moduleSize;
+          if (isFinder) {
+            ctx.fillStyle = finderColor; // Use eye color for finders
+            ctx.fillRect(x, y, moduleSize, moduleSize);
+            continue;
+          }
 
-      // ✅ Keep finder patterns square (VERY IMPORTANT)
-      const isFinder =
-        (col < 9 && row < 9) ||
-        (col > moduleCount - 9 && row < 9) ||
-        (col < 9 && row > moduleCount - 9);
+          // ✅ Draw patterns with QR color
+          ctx.fillStyle = customColor;
 
-      ctx.fillStyle = customColor;
-
-      if (isFinder) {
-        ctx.fillRect(x, y, moduleSize, moduleSize);
-        continue;
+          if (pattern === "rounded") {
+            roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3);
+          } else if (pattern === "circle") {
+            ctx.beginPath();
+            ctx.arc(
+              x + moduleSize / 2,
+              y + moduleSize / 2,
+              moduleSize / 2.1,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
+        }
       }
+    } else {
+      // For square pattern, redraw if eye color is different
+      if (finderColor !== customColor) {
+        const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
+        const moduleCount = qr.modules.size;
+        const moduleSize = size / moduleCount;
 
-      // ✅ Draw patterns
-      if (pattern === "dots") {
-        ctx.beginPath();
-        ctx.arc(
-          x + moduleSize / 2,
-          y + moduleSize / 2,
-          moduleSize / 2,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
-      }
+        // Draw base QR
+        ctx.drawImage(qrImage, 0, 0, size, size);
 
-      else if (pattern === "rounded") {
-        roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3);
-      }
+        // Redraw finder patterns with eye color
+        for (let row = 0; row < moduleCount; row++) {
+          for (let col = 0; col < moduleCount; col++) {
+            const isDark = qr.modules.get(row, col);
+            if (!isDark) continue;
 
-      else if (pattern === "circle") {
-        ctx.beginPath();
-        ctx.arc(
-          x + moduleSize / 2,
-          y + moduleSize / 2,
-          moduleSize / 2.1,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
+            const isFinder =
+              (col < 9 && row < 9) ||
+              (col > moduleCount - 9 && row < 9) ||
+              (col < 9 && row > moduleCount - 9);
+
+            if (isFinder) {
+              const x = col * moduleSize;
+              const y = row * moduleSize;
+              ctx.fillStyle = finderColor;
+              ctx.fillRect(x, y, moduleSize, moduleSize);
+            }
+          }
+        }
+      } else {
+        // Square QR with same colors
+        ctx.drawImage(qrImage, 0, 0, size, size);
       }
     }
-  }
-
-} else {
-  // Square QR stays same
-  ctx.drawImage(qrImage, 0, 0, size, size);
-}
-
 
     // Step 4: Add logo if provided
     if (logoFile) {
@@ -226,41 +249,33 @@ if (pattern !== "square") {
         console.error("Logo processing error:", err);
       }
     } else if (companyInitial) {
-      // Step 5: Add 3D embossed initial (like your reference image)
+      // Step 5: Add initial in circular background with border
       const initial = companyInitial.charAt(0).toUpperCase();
       const centerX = size / 2;
       const centerY = size / 2;
+      const circleRadius = 70; // Circle size
 
-      // Create 3D effect with multiple layers
       ctx.save();
 
-      // Layer 1: Deep shadow (bottom right)
-      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-      ctx.font = "bold 200px Arial";
+      // Draw white circular background
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw border with QR color
+      ctx.strokeStyle = customColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Draw initial with QR color
+      ctx.fillStyle = customColor;
+      ctx.font = "bold 80px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(initial, centerX + 6, centerY + 6);
-
-      // Layer 2: Medium shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-      ctx.fillText(initial, centerX + 4, centerY + 4);
-
-      // Layer 3: Light shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-      ctx.fillText(initial, centerX + 2, centerY + 2);
-
-      // Layer 4: Main letter (white/light)
-      ctx.fillStyle = "#FFFFFF";
       ctx.fillText(initial, centerX, centerY);
-
-      // Layer 5: Top highlight (gives 3D raised effect)
-      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-      ctx.fillText(initial, centerX - 1, centerY - 1);
-
-      // Layer 6: Outline for definition
-      // ctx.strokeStyle = customColor;
-      // ctx.lineWidth = 3;
-      // ctx.strokeText(initial, centerX, centerY);
 
       ctx.restore();
     }
