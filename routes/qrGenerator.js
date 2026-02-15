@@ -93,39 +93,12 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     }
 
     const customColor = primaryColor || "#000000";
-    const finderColor = eyeColor || customColor; // Eye color defaults to QR color
+    const finderColor = eyeColor || customColor;
     const bgColor = backgroundColor || "#FFFFFF";
     const pattern = patternStyle || "square";
     const size = 600;
 
-    // Step 1: Generate base QR code
-    let qrBuffer;
-
-    if (pattern === "square") {
-      // Standard square QR
-      qrBuffer = await QRCode.toBuffer(url, {
-        errorCorrectionLevel: "H",
-        margin: 2,
-        width: size,
-        color: {
-          dark: customColor,
-          light: bgColor,
-        },
-      });
-    } else {
-      // For patterns, generate black/white first, then redraw
-      qrBuffer = await QRCode.toBuffer(url, {
-        errorCorrectionLevel: "H",
-        margin: 2,
-        width: size,
-        color: {
-          dark: "#000000",
-          light: "#FFFFFF",
-        },
-      });
-    }
-
-    // Step 2: Create canvas and load QR
+    // Step 1: Create canvas
     const canvas = createCanvas(size, size);
     const ctx = canvas.getContext("2d");
 
@@ -133,87 +106,47 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, size, size);
 
-    const qrImage = await loadImage(qrBuffer);
+    // Step 2: Generate QR matrix
+    const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
+    const moduleCount = qr.modules.size;
+    const moduleSize = size / (moduleCount + 4); // +4 for margin (2 modules on each side)
+    const offset = moduleSize * 2; // Start drawing with 2-module margin
 
-    // Step 3: Apply pattern if not square
-    if (pattern !== "square") {
-      // ✅ Create QR matrix properly
-      const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
+    // Step 3: Draw QR code modules
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        const isDark = qr.modules.get(row, col);
+        if (!isDark) continue;
 
-      const moduleCount = qr.modules.size;
-      const moduleSize = size / moduleCount;
+        const x = offset + col * moduleSize;
+        const y = offset + row * moduleSize;
 
-      // Draw modules safely
-      for (let row = 0; row < moduleCount; row++) {
-        for (let col = 0; col < moduleCount; col++) {
-          const isDark = qr.modules.get(row, col);
-          if (!isDark) continue;
+        // Check if this is part of finder pattern (corner squares)
+        const isFinder =
+          (col < 7 && row < 7) || // Top-left
+          (col > moduleCount - 8 && row < 7) || // Top-right
+          (col < 7 && row > moduleCount - 8); // Bottom-left
 
-          const x = col * moduleSize;
-          const y = row * moduleSize;
+        // Use finder color for finder patterns, QR color for rest
+        ctx.fillStyle = isFinder ? finderColor : customColor;
 
-          // ✅ Keep finder patterns square (VERY IMPORTANT)
-          const isFinder =
-            (col < 9 && row < 9) ||
-            (col > moduleCount - 9 && row < 9) ||
-            (col < 9 && row > moduleCount - 9);
-
-          if (isFinder) {
-            ctx.fillStyle = finderColor; // Use eye color for finders
-            ctx.fillRect(x, y, moduleSize, moduleSize);
-            continue;
-          }
-
-          // ✅ Draw patterns with QR color
-          ctx.fillStyle = customColor;
-
-          if (pattern === "rounded") {
-            roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3);
-          } else if (pattern === "circle") {
-            ctx.beginPath();
-            ctx.arc(
-              x + moduleSize / 2,
-              y + moduleSize / 2,
-              moduleSize / 2.1,
-              0,
-              Math.PI * 2
-            );
-            ctx.fill();
-          }
+        // Apply pattern style
+        if (pattern === "square" || isFinder) {
+          // Always use square for finder patterns to maintain scannability
+          ctx.fillRect(x, y, moduleSize, moduleSize);
+        } else if (pattern === "rounded") {
+          roundRect(ctx, x, y, moduleSize, moduleSize, moduleSize / 3);
+        } else if (pattern === "circle") {
+          ctx.beginPath();
+          ctx.arc(
+            x + moduleSize / 2,
+            y + moduleSize / 2,
+            moduleSize / 2.2,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
         }
-      }
-    } else {
-      // For square pattern, redraw if eye color is different
-      if (finderColor !== customColor) {
-        const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
-        const moduleCount = qr.modules.size;
-        const moduleSize = size / moduleCount;
-
-        // Draw base QR
-        ctx.drawImage(qrImage, 0, 0, size, size);
-
-        // Redraw finder patterns with eye color
-        for (let row = 0; row < moduleCount; row++) {
-          for (let col = 0; col < moduleCount; col++) {
-            const isDark = qr.modules.get(row, col);
-            if (!isDark) continue;
-
-            const isFinder =
-              (col < 9 && row < 9) ||
-              (col > moduleCount - 9 && row < 9) ||
-              (col < 9 && row > moduleCount - 9);
-
-            if (isFinder) {
-              const x = col * moduleSize;
-              const y = row * moduleSize;
-              ctx.fillStyle = finderColor;
-              ctx.fillRect(x, y, moduleSize, moduleSize);
-            }
-          }
-        }
-      } else {
-        // Square QR with same colors
-        ctx.drawImage(qrImage, 0, 0, size, size);
       }
     }
 
@@ -222,28 +155,34 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
       try {
         const logoImage = await loadImage(logoFile.buffer);
         const logoSize = 120;
-        const logoX = (size - logoSize) / 2;
-        const logoY = (size - logoSize) / 2;
+        const centerX = size / 2;
+        const centerY = size / 2;
 
         // White circle background
         ctx.fillStyle = "#FFFFFF";
         ctx.beginPath();
-        ctx.arc(size / 2, size / 2, logoSize / 2 + 10, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, logoSize / 2 + 10, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw logo
+        // Draw logo (clipped to circle)
         ctx.save();
         ctx.beginPath();
-        ctx.arc(size / 2, size / 2, logoSize / 2, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, logoSize / 2, 0, Math.PI * 2);
         ctx.clip();
-        ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+        ctx.drawImage(
+          logoImage,
+          centerX - logoSize / 2,
+          centerY - logoSize / 2,
+          logoSize,
+          logoSize
+        );
         ctx.restore();
 
         // Border
         ctx.strokeStyle = customColor;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(size / 2, size / 2, logoSize / 2 + 10, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, logoSize / 2 + 10, 0, Math.PI * 2);
         ctx.stroke();
       } catch (err) {
         console.error("Logo processing error:", err);
@@ -253,7 +192,7 @@ router.post("/generate-custom", upload.single("logo"), async (req, res) => {
       const initial = companyInitial.charAt(0).toUpperCase();
       const centerX = size / 2;
       const centerY = size / 2;
-      const circleRadius = 70; // Circle size
+      const circleRadius = 70;
 
       ctx.save();
 
