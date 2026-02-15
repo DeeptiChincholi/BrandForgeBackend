@@ -195,31 +195,28 @@ if (pattern !== "square") {
 
 } else {
   // Square QR stays same
-  ctx.drawImage(qrImage, 0, 0, size, size);
-  if (finderColor !== customColor) {
-    const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
-    const moduleCount = qr.modules.size;
-    const moduleSize = size / moduleCount;
+  const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
 
-    for (let row = 0; row < moduleCount; row++) {
-      for (let col = 0; col < moduleCount; col++) {
-        const isDark = qr.modules.get(row, col);
-        if (!isDark) continue;
+  const moduleCount = qr.modules.size;
+  const moduleSize = size / moduleCount;
 
-        const isFinder =
-          (col < 9 && row < 9) ||
-          (col > moduleCount - 9 && row < 9) ||
-          (col < 9 && row > moduleCount - 9);
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      if (!qr.modules.get(row, col)) continue;
 
-        if (isFinder) {
-          const x = col * moduleSize;
-          const y = row * moduleSize;
-          ctx.fillStyle = finderColor;
-          ctx.fillRect(x, y, moduleSize, moduleSize);
-        }
-      }
+      const x = col * moduleSize;
+      const y = row * moduleSize;
+
+      const isFinder =
+        (col < 9 && row < 9) ||
+        (col > moduleCount - 9 && row < 9) ||
+        (col < 9 && row > moduleCount - 9);
+
+      ctx.fillStyle = isFinder ? finderColor : customColor;
+      ctx.fillRect(x, y, moduleSize, moduleSize);
     }
   }
+  
 }
 
 
