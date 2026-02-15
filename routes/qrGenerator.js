@@ -1,3 +1,4 @@
+const express = require("express");
 const router = express.Router();
 const QRCode = require("qrcode");
 const { createCanvas, loadImage } = require("canvas");
