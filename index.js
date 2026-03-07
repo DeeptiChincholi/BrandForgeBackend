@@ -12,12 +12,14 @@ const portfolioRoutes = require("./routes/portfolioRoutes.js");
 const logoGeminiRoutes = require("./routes/logoGemini.js");
 const contentRoutes = require("./routes/contentGenerator.js");
 const qrRoutes = require("./routes/qrGenerator.js");
+const feedbackRoutes = require("./routes/feedbackRoutes");
 
 /* ROUTES */
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/logo-gemini", logoGeminiRoutes);
 app.use("/api/content", contentRoutes);
 app.use("/api/qr", qrRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 /* ✅ CONNECT MONGODB */
 mongoose
