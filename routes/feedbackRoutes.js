@@ -6,10 +6,18 @@ const verifyToken = require("../middleware/auth");
 // POST feedback (save feedback)
 router.post("/", verifyToken, async (req, res) => {
   try {
-    console.log(req.user); // debug
-
     const userId = req.user.userId;
 
+    // check if feedback already exists
+    const existingFeedback = await Feedback.findOne({ userId });
+
+    if (existingFeedback) {
+      return res.status(400).json({
+        message: "You have already submitted feedback"
+      });
+    }
+
+    // ✅ create new feedback
     const feedback = new Feedback({
       ...req.body,
       userId
