@@ -6,6 +6,7 @@ const verifyToken = require("../middleware/auth");
 // POST feedback (save feedback)
 router.post("/", verifyToken, async (req, res) => {
   try {
+    const userId = req.user.userId;
     const feedback = new Feedback(req.body);
     await feedback.save();
     res.status(201).json(feedback);
