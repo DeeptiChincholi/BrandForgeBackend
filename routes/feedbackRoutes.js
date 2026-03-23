@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const Feedback = require("../models/Feedback");
+const verifyToken = require("../middleware/auth");
 
 // POST feedback (save feedback)
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
     const feedback = new Feedback(req.body);
     await feedback.save();
