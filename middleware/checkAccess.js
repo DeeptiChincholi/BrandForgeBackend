@@ -3,32 +3,42 @@ const User = require("../models/User");
 const checkAccess = (feature) => {
   return async (req, res, next) => {
     try {
-      const userId = req.user.userId;
+      const allowedFeatures = ["logo", "portfolio", "thumbnail", "customQR"];
 
+      if (!allowedFeatures.includes(feature)) {
+        return res.status(400).json({
+          message: "Invalid feature"
+        });
+      }
+
+      const userId = req.user.userId;
       const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // 🔹 STEP 1: Check expiry
-      if (user.subscription.expiryDate) {
-        const currentDate = new Date();
+      const currentDate = new Date();
 
-        if (currentDate > user.subscription.expiryDate) {
-          user.subscription.isActive = false;
-          await user.save();
-        }
+      // 🔹 STEP 1: Expiry check
+      if (
+        user.subscription.expiryDate &&
+        currentDate > user.subscription.expiryDate &&
+        user.subscription.isActive
+      ) {
+        user.subscription.isActive = false;
+        await user.save();
       }
 
-      // 🔹 STEP 2: If premium active → allow
+      // 🔹 STEP 2: Premium access
       if (user.subscription.isActive) {
         return next();
       }
 
-      // 🔹 STEP 3: Check free usage
+      // 🔹 STEP 3: Free usage
       if (!user.freeUsage[feature]) {
         user.freeUsage[feature] = true;
+        user.markModified("freeUsage");
         await user.save();
         return next();
       }
