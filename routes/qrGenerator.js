@@ -3,7 +3,9 @@ const router = express.Router();
 const QRCode = require("qrcode");
 const { createCanvas, loadImage } = require("canvas");
 const multer = require("multer");
-
+const verifyToken = require("../middleware/auth");
+const checkAccess = require("../middleware/checkAccess");
+const { verify } = require("jsonwebtoken");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -60,7 +62,7 @@ router.post("/generate", async (req, res) => {
 // ========================================
 // GENERATE CUSTOM QR CODE
 // ========================================
-router.post("/generate-custom", upload.single("logo"), async (req, res) => {
+router.post("/generate-custom", verifyToken, checkAccess("customQR"), upload.single("logo"), async (req, res) => {
   try {
     const { 
       url, 

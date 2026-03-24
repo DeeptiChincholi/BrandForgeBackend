@@ -4,6 +4,8 @@ const path = require("path");
 const fs = require("fs");
 const router = express.Router();
 const upload = require("../middleware/upload");
+const verifyToken = require("../middleware/auth");
+const checkAccess = require("../middleware/checkAccess");
 
 /**
  * ✅ GET latest portfolio (default)
@@ -75,7 +77,7 @@ router.get("/:id", async (req, res) => {
 
 // POST - Create Portfolio Data
 // POST - Create Portfolio Data + Logo Upload
-router.post("/", upload.single("logo"), async (req, res) => {
+router.post("/", verifyToken, checkAccess("portfolio"), upload.single("logo"), async (req, res) => {
   try {
     // logo will come from Cloudinary
     const logoUrl = req.file ? req.file.path : "";

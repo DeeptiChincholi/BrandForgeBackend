@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 require("dotenv").config();
+const verifyToken = require("../middleware/auth");
+const checkAccess = require("../middleware/checkAccess");
 
-router.post("/generate", async (req, res) => {
+router.post("/generate", verifyToken, checkAccess("logo"), async (req, res) => {
   try {
     const { companyName, description, brandGoals } = req.body;
 

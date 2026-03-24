@@ -137,7 +137,9 @@ Caption three here 💡`;
 // ========================================
 // 3. GENERATE THUMBNAIL
 // ========================================
-router.post("/generate-thumbnail", async (req, res) => {
+const verifyToken = require("../middleware/auth");
+const checkAccess = require("../middleware/checkAccess");
+router.post("/generate-thumbnail", verifyToken, checkAccess("thumbnail"), async (req, res) => {
   try {
     const { description } = req.body;
 
