@@ -16,6 +16,7 @@ const feedbackRoutes = require("./routes/feedbackRoutes");
 const authRoutes = require("./routes/auth");
 const subscriptionRoutes = require("./routes/subscription");
 const profileRoutes = require("./routes/profile.js")
+const userSettingsRoutes = require("./routes/userSettings");
 
 /* ROUTES */
 app.use("/api/portfolio", portfolioRoutes);
@@ -26,6 +27,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/user", userSettingsRoutes);
 /* ✅ CONNECT MONGODB */
 mongoose
   .connect(process.env.MONGO_URI)
